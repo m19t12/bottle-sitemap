@@ -6,7 +6,7 @@ with open("README.md") as fh:
 
 setuptools.setup(
     name="bottle_sitemap",
-    version="0.1.0",
+    version="0.2.0",
     author="Manolis Tsoukalas",
     author_email="emmtsoukalas@gmail.com",
     description="Plugin for generating a sitemap in Bottle web framework.",
