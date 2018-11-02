@@ -34,7 +34,7 @@ def create_static_link(domain: str, site_name: str, link: object) -> str:
     return '{}://{}{}'.format(domain, site_name, link.rule)
 
 
-def create_dynamic_link(domain: str, site_name: str, link: object, resource_keys: list) -> str:
+def create_dynamic_link(domain: str, site_name: str, link: object, resource_keys: list) -> list:
     """Function for creating dynamic links.
     This function gets the link_resources key from route config.
     The link_resources is a list with an object with keys the resource names.
@@ -44,14 +44,16 @@ def create_dynamic_link(domain: str, site_name: str, link: object, resource_keys
     :param site_name: your site name. (test-site.com)
     :param link: the endpoint. (/hello/<user_id:int>/<item>)
     :param resource_keys: the keys contained in the url. ([<user_id:int>, <item>])
-    :return: returns a full link for the sitemap. (http://test-site.com/hello/1/foo)
+    :return: returns a full list with links for the sitemap. ([http://test-site.com/hello/1/foo])
     """
     resources = link.config().get('link_resources')
 
     if resources:
-        sitemap_dynamic_link = link.rule
-        for key in resource_keys:
-            for resource in resources:
+        dynamic_links = []
+        for resource in resources:
+            sitemap_dynamic_link = link.rule
+
+            for key in resource_keys:
                 link_without_filter = re.search(r'<(\w+)>', sitemap_dynamic_link)
                 link_with_filter = re.search(r'<(\w+):(\w+)>', sitemap_dynamic_link)
 
@@ -66,8 +68,9 @@ def create_dynamic_link(domain: str, site_name: str, link: object, resource_keys
                     except KeyError:
                         raise ResourceDoesntExist(
                             'Resource {} not found in the backend.'.format(resource_key_name))
+            dynamic_links.append('{}://{}{}'.format(domain, site_name, sitemap_dynamic_link))
 
-        return '{}://{}{}'.format(domain, site_name, sitemap_dynamic_link)
+        return dynamic_links
     else:
         raise SitemapBackendNotFound("Sitemap link_resources not found. Can't create dynamic link without a backend.")
 
@@ -118,7 +121,7 @@ class BottleSitemap(object):
 
                 if resource_keys:
                     result = create_dynamic_link(self.domain, self.site_name, link, resource_keys)
-                    sitemap_links.append(result)
+                    sitemap_links.extend(result)
                 else:
                     result = create_static_link(self.domain, self.site_name, link)
                     sitemap_links.append(result)
